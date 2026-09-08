@@ -3,6 +3,8 @@ package ng.helpdesk.utils;
 import ng.helpdesk.data.models.Comment;
 import ng.helpdesk.data.models.Ticket;
 import ng.helpdesk.data.models.User;
+//import ng.helpdesk.dtos.responses.CommentResponse;
+//import ng.helpdesk.dtos.responses.TicketResponse;
 import ng.helpdesk.dtos.responses.CommentResponse;
 import ng.helpdesk.dtos.responses.TicketResponse;
 import ng.helpdesk.dtos.responses.UserResponse;
@@ -21,6 +23,8 @@ public class Mapper {
         response.setLoggedIn(user.isLoggedIn());
         return response;
     }
+
+
 
     public static CommentResponse mapToComment(Comment comment) {
         CommentResponse response = new CommentResponse();

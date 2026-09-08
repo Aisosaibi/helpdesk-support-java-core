@@ -5,6 +5,7 @@ import ng.helpdesk.data.models.Role;
 
 @Data
 public class CreateUserRequest {
+    private String name;
     private String username;
     private String password;
     private String email;

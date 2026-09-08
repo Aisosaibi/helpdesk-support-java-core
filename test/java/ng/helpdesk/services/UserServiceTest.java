@@ -20,18 +20,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserServiceTest {
 
     @Autowired
+    private AuthService authService;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
 
     @BeforeEach
-    void setUp() {
+    void cleanUp() {
         userRepository.deleteAll();
     }
 
-    private CreateUserRequest registerUser() {
+    private CreateUserRequest buildRegisterRequest() {
         CreateUserRequest request = new CreateUserRequest();
+        request.setName("John Doe");
         request.setUsername("johndoe");
         request.setEmail("john@example.com");
         request.setPassword("pass123");
@@ -39,11 +43,14 @@ class UserServiceTest {
         return request;
     }
 
+    // --- register ---
+
     @Test
     void registerSavesUserAndReturnsResponse() {
-        UserResponse response = userService.register(registerUser());
+        UserResponse response = authService.register(buildRegisterRequest());
 
         assertNotNull(response);
+        assertEquals("John Doe", response.getName());
         assertEquals("john@example.com", response.getEmail());
         assertEquals(Role.CUSTOMER, response.getRole());
         assertFalse(response.isLoggedIn());
@@ -52,21 +59,24 @@ class UserServiceTest {
 
     @Test
     void registerThrowsWhenEmailAlreadyExists() {
-        userService.register(registerUser());
+        authService.register(buildRegisterRequest());
 
-        assertThrows(UserAlreadyExistsException.class, () -> userService.register(registerUser()));
+        assertThrows(UserAlreadyExistsException.class,
+                () -> authService.register(buildRegisterRequest()));
         assertEquals(1, userRepository.count());
     }
 
+    // --- login ---
+
     @Test
     void loginSetsUserAsLoggedIn() {
-        userService.register(registerUser());
+        authService.register(buildRegisterRequest());
 
         LoginUserRequest login = new LoginUserRequest();
         login.setUsername("johndoe");
         login.setPassword("pass123");
 
-        UserResponse response = userService.login(login);
+        UserResponse response = authService.login(login);
 
         assertNotNull(response);
         assertTrue(response.isLoggedIn());
@@ -78,18 +88,38 @@ class UserServiceTest {
         login.setUsername("nobody");
         login.setPassword("pass123");
 
-        assertThrows(UserNotFoundException.class, () -> userService.login(login));
+        assertThrows(UserNotFoundException.class, () -> authService.login(login));
     }
 
     @Test
     void loginThrowsForWrongPassword() {
-        userService.register(registerUser());
+        authService.register(buildRegisterRequest());
 
         LoginUserRequest login = new LoginUserRequest();
         login.setUsername("johndoe");
         login.setPassword("wrongpass");
 
-        assertThrows(InvalidCredentialsException.class, () -> userService.login(login));
+        assertThrows(InvalidCredentialsException.class, () -> authService.login(login));
+    }
+
+    // --- logout ---
+
+    @Test
+    void logoutSetsUserAsLoggedOut() {
+        authService.register(buildRegisterRequest());
+
+        LoginUserRequest login = new LoginUserRequest();
+        login.setUsername("johndoe");
+        login.setPassword("pass123");
+        authService.login(login);
+
+        LogoutUserRequest logout = new LogoutUserRequest();
+        logout.setUsername("johndoe");
+
+        UserResponse response = authService.logout(logout);
+
+        assertNotNull(response);
+        assertFalse(response.isLoggedIn());
     }
 
     @Test
@@ -97,12 +127,14 @@ class UserServiceTest {
         LogoutUserRequest logout = new LogoutUserRequest();
         logout.setUsername("nobody");
 
-        assertThrows(UserNotFoundException.class, () -> userService.logout(logout));
+        assertThrows(UserNotFoundException.class, () -> authService.logout(logout));
     }
+
+    // --- getUserById ---
 
     @Test
     void getUserByIdReturnsCorrectUser() {
-        userService.register(registerUser());
+        authService.register(buildRegisterRequest());
         String id = userRepository.findByUsername("johndoe").get().getId();
 
         UserResponse response = userService.getUserById(id);
@@ -113,6 +145,7 @@ class UserServiceTest {
 
     @Test
     void getUserByIdThrowsWhenNotFound() {
-        assertThrows(UserNotFoundException.class, () -> userService.getUserById("nonexistent-id"));
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserById("nonexistent-id"));
     }
 }
