@@ -29,29 +29,26 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    void cleanUp() {
+    void setUp() {
         userRepository.deleteAll();
     }
 
-    private CreateUserRequest buildRegisterRequest() {
+    private CreateUserRequest registerUser() {
         CreateUserRequest request = new CreateUserRequest();
-        request.setName("John Doe");
-        request.setUsername("johndoe");
-        request.setEmail("john@example.com");
-        request.setPassword("pass123");
+        request.setName("Ryan Ariyo");
+        request.setUsername("ryannn");
+        request.setEmail("ryan@gmail.com");
+        request.setPassword("1234");
         request.setRole(Role.CUSTOMER);
         return request;
     }
 
-    // --- register ---
-
     @Test
     void registerSavesUserAndReturnsResponse() {
-        UserResponse response = authService.register(buildRegisterRequest());
-
+        UserResponse response = authService.register(registerUser());
         assertNotNull(response);
-        assertEquals("John Doe", response.getName());
-        assertEquals("john@example.com", response.getEmail());
+        assertEquals("Ryan Ariyo", response.getName());
+        assertEquals("ryan@gmail.com", response.getEmail());
         assertEquals(Role.CUSTOMER, response.getRole());
         assertFalse(response.isLoggedIn());
         assertEquals(1, userRepository.count());
@@ -59,25 +56,18 @@ class UserServiceTest {
 
     @Test
     void registerThrowsWhenEmailAlreadyExists() {
-        authService.register(buildRegisterRequest());
-
-        assertThrows(UserAlreadyExistsException.class,
-                () -> authService.register(buildRegisterRequest()));
+        authService.register(registerUser());
+        assertThrows(UserAlreadyExistsException.class, () -> authService.register(registerUser()));
         assertEquals(1, userRepository.count());
     }
 
-    // --- login ---
-
     @Test
     void loginSetsUserAsLoggedIn() {
-        authService.register(buildRegisterRequest());
-
+        authService.register(registerUser());
         LoginUserRequest login = new LoginUserRequest();
-        login.setUsername("johndoe");
-        login.setPassword("pass123");
-
+        login.setUsername("ryannn");
+        login.setPassword("1234");
         UserResponse response = authService.login(login);
-
         assertNotNull(response);
         assertTrue(response.isLoggedIn());
     }
@@ -86,38 +76,31 @@ class UserServiceTest {
     void loginThrowsForUnknownUsername() {
         LoginUserRequest login = new LoginUserRequest();
         login.setUsername("nobody");
-        login.setPassword("pass123");
+        login.setPassword("1234");
 
         assertThrows(UserNotFoundException.class, () -> authService.login(login));
     }
 
     @Test
     void loginThrowsForWrongPassword() {
-        authService.register(buildRegisterRequest());
-
+        authService.register(registerUser());
         LoginUserRequest login = new LoginUserRequest();
-        login.setUsername("johndoe");
-        login.setPassword("wrongpass");
-
+        login.setUsername("ryannn");
+        login.setPassword("0000");
         assertThrows(InvalidCredentialsException.class, () -> authService.login(login));
     }
 
-    // --- logout ---
-
     @Test
     void logoutSetsUserAsLoggedOut() {
-        authService.register(buildRegisterRequest());
-
+        authService.register(registerUser());
         LoginUserRequest login = new LoginUserRequest();
-        login.setUsername("johndoe");
-        login.setPassword("pass123");
+        login.setUsername("ryannn");
+        login.setPassword("1234");
         authService.login(login);
 
         LogoutUserRequest logout = new LogoutUserRequest();
-        logout.setUsername("johndoe");
-
+        logout.setUsername("ryannn");
         UserResponse response = authService.logout(logout);
-
         assertNotNull(response);
         assertFalse(response.isLoggedIn());
     }
@@ -126,26 +109,21 @@ class UserServiceTest {
     void logoutThrowsForUnknownUsername() {
         LogoutUserRequest logout = new LogoutUserRequest();
         logout.setUsername("nobody");
-
         assertThrows(UserNotFoundException.class, () -> authService.logout(logout));
     }
 
-    // --- getUserById ---
 
     @Test
     void getUserByIdReturnsCorrectUser() {
-        authService.register(buildRegisterRequest());
-        String id = userRepository.findByUsername("johndoe").get().getId();
-
+        authService.register(registerUser());
+        String id = userRepository.findByUsername("ryannn").get().getId();
         UserResponse response = userService.getUserById(id);
-
         assertNotNull(response);
-        assertEquals("john@example.com", response.getEmail());
+        assertEquals("ryan@gmail.com", response.getEmail());
     }
 
     @Test
     void getUserByIdThrowsWhenNotFound() {
-        assertThrows(UserNotFoundException.class,
-                () -> userService.getUserById("nonexistent-id"));
+        assertThrows(UserNotFoundException.class, () -> userService.getUserById("nonexistent-id"));
     }
 }
