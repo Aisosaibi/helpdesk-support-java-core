@@ -74,11 +74,11 @@ class CommentServiceTest {
         CreateCommentRequest request = new CreateCommentRequest();
         request.setBody("Looking into this now");
         request.setTicketId(existingTicketId);
-        request.setAuthorId(existingUserId);
+        request.setUserId(existingUserId);
         return request;
     }
 
-    // --- postComment ---
+
 
     @Test
     public void postCommentSavesCommentAndReturnsResponse() {
@@ -87,7 +87,7 @@ class CommentServiceTest {
         assertNotNull(response);
         assertEquals("Looking into this now", response.getBody());
         assertEquals(existingTicketId, response.getTicketId());
-        assertEquals(existingUserId, response.getAuthorId());
+        assertEquals(existingUserId, response.getUserId());
         assertEquals(1, commentRepository.count());
     }
 
@@ -104,14 +104,14 @@ class CommentServiceTest {
     @Test
     public void postCommentThrowsWhenAuthorDoesNotExist() {
         CreateCommentRequest request = buildCommentRequest();
-        request.setAuthorId("This author does not exist");
+        request.setUserId("This author does not exist");
 
         assertThrows(UserNotFoundException.class,
                 () -> commentService.postComment(request));
         assertEquals(0, commentRepository.count());
     }
 
-    // --- getCommentById ---
+
 
     @Test
     public void getCommentByIdReturnsCorrectComment() {
@@ -122,7 +122,7 @@ class CommentServiceTest {
         assertNotNull(fetched);
         assertEquals("Looking into this now", fetched.getBody());
         assertEquals(existingTicketId, fetched.getTicketId());
-        assertEquals(existingUserId, fetched.getAuthorId());
+        assertEquals(existingUserId, fetched.getUserId());
     }
 
     @Test
@@ -131,7 +131,7 @@ class CommentServiceTest {
                 () -> commentService.getCommentById("This comment does not exist"));
     }
 
-    // --- getCommentsByTicket ---
+
 
     @Test
     public void getCommentsByTicketReturnsCommentsForThatTicket() {
@@ -148,5 +148,43 @@ class CommentServiceTest {
         List<CommentResponse> comments = commentService.getCommentsByTicket(existingTicketId);
 
         assertTrue(comments.isEmpty());
+    }
+
+    @Test
+    public void getCommentsByTicketReturnsAllCommentsForThatTicket() {
+
+
+        CreateCommentRequest firstRequest = buildCommentRequest();
+        firstRequest.setBody("Looking into this now");
+
+
+        CreateCommentRequest secondRequest = buildCommentRequest();
+        secondRequest.setBody("I have found the problem");
+
+        commentService.postComment(firstRequest);
+        commentService.postComment(secondRequest);
+
+        List<CommentResponse> comments =
+                commentService.getCommentsByTicket(existingTicketId);
+
+        assertEquals(2, comments.size());
+
+        assertEquals("Looking into this now", comments.get(0).getBody());
+        assertEquals("I have found the problem", comments.get(1).getBody());
+    }
+
+    @Test
+    public void postCommentGeneratesCommentId() {
+        CommentResponse response = commentService.postComment(buildCommentRequest());
+
+        assertNotNull(response.getId());
+        assertFalse(response.getId().isBlank());
+    }
+
+    @Test
+    public void postCommentAssignsCorrectTicket() {
+        CommentResponse response = commentService.postComment(buildCommentRequest());
+
+        assertEquals(existingTicketId, response.getTicketId());
     }
 }

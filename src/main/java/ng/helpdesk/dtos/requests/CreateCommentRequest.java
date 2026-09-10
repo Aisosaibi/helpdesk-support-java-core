@@ -6,5 +6,5 @@ import lombok.Data;
 public class CreateCommentRequest {
     private String body;
     private String ticketId;
-    private String authorId;
+    private String userId;
 }
