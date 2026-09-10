@@ -30,14 +30,14 @@ public class CommentService {
         if (ticketRepository.findById(request.getTicketId()).isEmpty()) {
             throw new TicketNotFoundException("Ticket not found");
         }
-        if (userRepository.findById(request.getAuthorId()).isEmpty()) {
+        if (userRepository.findById(request.getUserId()).isEmpty()) {
             throw new UserNotFoundException("User not found");
         }
 
         Comment comment = new Comment();
         comment.setBody(request.getBody());
         comment.setTicketId(request.getTicketId());
-        comment.setAuthorId(request.getAuthorId());
+        comment.setUserId(request.getUserId());
         comment.setCreatedAt(LocalDateTime.now());
         commentRepository.save(comment);
 
