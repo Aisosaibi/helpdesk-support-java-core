@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+// Every account in the system is stored as a User document in MongoDB.
+// This object is the main identity for both customers and agents.
 @Document(collection = "users")
 @Data
 public class User {

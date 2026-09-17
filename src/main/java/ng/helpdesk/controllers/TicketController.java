@@ -1,10 +1,11 @@
 package ng.helpdesk.controllers;
 
-import ng.helpdesk.data.models.Ticket;
+import ng.helpdesk.dtos.requests.AssignAgentRequest;
 import ng.helpdesk.dtos.requests.CreateTicketRequest;
+import ng.helpdesk.dtos.requests.UpdateTicketStatusRequest;
 import ng.helpdesk.dtos.responses.TicketResponse;
+import ng.helpdesk.dtos.responses.TicketStatsResponse;
 import ng.helpdesk.exceptions.TicketNotFoundException;
-import ng.helpdesk.exceptions.UserAlreadyExistsException;
 import ng.helpdesk.exceptions.UserNotFoundException;
 import ng.helpdesk.services.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// TicketController exposes all operations the dashboard uses: create, list, assign, status update, and delete.
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/api/tickets")
 public class TicketController {
 
-    private TicketService ticketService;
+    private final TicketService ticketService;
 
     @Autowired
     public TicketController(TicketService ticketService) {
@@ -27,22 +29,26 @@ public class TicketController {
 
     @PostMapping
     public ResponseEntity<?> createTicket(@RequestBody CreateTicketRequest request) {
-        try{
+        try {
             TicketResponse response = ticketService.createTicket(request);
             return ResponseEntity.status(201).body(response);
-        }
-        catch(UserNotFoundException e){
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-        catch (IllegalArgumentException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-
     }
 
     @GetMapping
     public ResponseEntity<List<TicketResponse>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
+    }
+
+    // This endpoint is intentionally public because the landing page has no
+    // logged-in user yet.
+    @GetMapping("/stats")
+    public ResponseEntity<TicketStatsResponse> getTicketStats() {
+        return ResponseEntity.ok(ticketService.getTicketStats());
     }
 
     @GetMapping("/{id}")
@@ -60,6 +66,39 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.getTicketsByCustomer(customerId));
     }
 
+    @PutMapping("/{id}/assign")
+    public ResponseEntity<?> assignAgent(@PathVariable String id, @RequestBody AssignAgentRequest request) {
+        try {
+            TicketResponse response = ticketService.assignAgent(id, request);
+            return ResponseEntity.ok(response);
+        } catch (TicketNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable String id, @RequestBody UpdateTicketStatusRequest request) {
+        try {
+            TicketResponse response = ticketService.updateStatus(id, request);
+            return ResponseEntity.ok(response);
+        } catch (TicketNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTicket(@PathVariable String id) {
+        try {
+            ticketService.deleteTicket(id);
+            return ResponseEntity.noContent().build();
+        } catch (TicketNotFoundException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
 }

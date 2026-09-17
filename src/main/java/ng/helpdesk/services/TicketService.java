@@ -10,6 +10,7 @@ import ng.helpdesk.dtos.requests.AssignAgentRequest;
 import ng.helpdesk.dtos.requests.CreateTicketRequest;
 import ng.helpdesk.dtos.requests.UpdateTicketStatusRequest;
 import ng.helpdesk.dtos.responses.TicketResponse;
+import ng.helpdesk.dtos.responses.TicketStatsResponse;
 import ng.helpdesk.exceptions.TicketNotFoundException;
 import ng.helpdesk.exceptions.UserNotFoundException;
 import ng.helpdesk.utils.Mapper;
@@ -19,7 +20,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+// This service contains the business rules for tickets: assignment, lifecycle updates, and deletion.
 @Service
 @AllArgsConstructor
 public class TicketService {
@@ -28,6 +31,10 @@ public class TicketService {
     private UserRepository userRepository;
 
     public TicketResponse createTicket(CreateTicketRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Ticket request is required");
+        }
+
         Optional<User> customer = userRepository.findById(request.getCustomerId());
         if (customer.isEmpty()) {
             throw new UserNotFoundException("Customer not found");
@@ -39,7 +46,7 @@ public class TicketService {
         Ticket ticket = new Ticket();
         ticket.setTitle(request.getTitle());
         ticket.setDescription(request.getDescription());
-        ticket.setPriority(request.getPriority());
+        ticket.setPriority(request.getPriority() == null ? "MEDIUM" : request.getPriority());
         ticket.setCustomerId(request.getCustomerId());
         ticket.setStatus("OPEN");
         ticket.setAgentId(null);
@@ -57,6 +64,15 @@ public class TicketService {
             result.add(Mapper.mapToTicket(ticket));
         }
         return result;
+    }
+
+    // Keep aggregate values in the backend so the UI reflects MongoDB rather than
+    // placeholder numbers.
+    public TicketStatsResponse getTicketStats() {
+        return new TicketStatsResponse(
+                ticketRepository.countByStatus("OPEN"),
+                ticketRepository.countByStatus("IN_PROGRESS"),
+                ticketRepository.countByStatus("RESOLVED"));
     }
 
     public TicketResponse getTicketById(String id) {
@@ -82,11 +98,15 @@ public class TicketService {
             throw new TicketNotFoundException("Ticket not found");
         }
 
+        if (request == null || request.getAgentId() == null || request.getAgentId().isBlank()) {
+            throw new IllegalArgumentException("Agent ID is required");
+        }
+
         Optional<User> agent = userRepository.findById(request.getAgentId());
         if (agent.isEmpty()) {
             throw new UserNotFoundException("Agent not found");
         }
-        if (agent.get().getRole() != Role.AGENT) {
+        if (agent.get().getRole() != Role.AGENT && agent.get().getRole() != Role.ADMIN) {
             throw new IllegalArgumentException("User is not an agent");
         }
 
@@ -101,8 +121,18 @@ public class TicketService {
         if (found.isEmpty()) {
             throw new TicketNotFoundException("Ticket not found");
         }
+
+        if (request == null || request.getStatus() == null || request.getStatus().isBlank()) {
+            throw new IllegalArgumentException("Status is required");
+        }
+
+        String status = request.getStatus().trim().toUpperCase();
+        if (!Set.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED").contains(status)) {
+            throw new IllegalArgumentException("Invalid ticket status");
+        }
+
         Ticket ticket = found.get();
-        ticket.setStatus(request.getStatus());
+        ticket.setStatus(status);
         ticketRepository.save(ticket);
         return Mapper.mapToTicket(ticket);
     }

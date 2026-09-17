@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// CommentController is used by the dashboard modal when a user adds notes to a ticket.
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/comments")
 @AllArgsConstructor
 public class CommentController {

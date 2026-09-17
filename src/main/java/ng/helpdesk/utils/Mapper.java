@@ -3,8 +3,6 @@ package ng.helpdesk.utils;
 import ng.helpdesk.data.models.Comment;
 import ng.helpdesk.data.models.Ticket;
 import ng.helpdesk.data.models.User;
-//import ng.helpdesk.dtos.responses.CommentResponse;
-//import ng.helpdesk.dtos.responses.TicketResponse;
 import ng.helpdesk.dtos.responses.CommentResponse;
 import ng.helpdesk.dtos.responses.TicketResponse;
 import ng.helpdesk.dtos.responses.UserResponse;
@@ -12,19 +10,20 @@ import ng.helpdesk.dtos.responses.UserResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+// This class is a central conversion layer between MongoDB entities and DTOs.
+// It makes sure the REST API sends only the public fields a web client needs.
 public class Mapper {
 
     public static UserResponse mapToUser(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setName(user.getName());
+        response.setUsername(user.getUsername());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole());
         response.setLoggedIn(user.isLoggedIn());
         return response;
     }
-
-
 
     public static CommentResponse mapToComment(Comment comment) {
         CommentResponse response = new CommentResponse();

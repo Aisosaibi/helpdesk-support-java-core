@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface TicketRepository extends MongoRepository<Ticket, String> {
     List<Ticket> findByCustomerId(String customerId);
+
+    long countByStatus(String status);
 }

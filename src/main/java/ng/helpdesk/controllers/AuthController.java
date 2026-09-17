@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// AuthController handles the browser login flow used by the static front-end pages.
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
@@ -31,6 +32,8 @@ public class AuthController {
             return ResponseEntity.status(201).body(response);
         } catch (UserAlreadyExistsException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -43,6 +46,8 @@ public class AuthController {
             return ResponseEntity.status(404).body(e.getMessage());
         } catch (InvalidCredentialsException e) {
             return ResponseEntity.status(401).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -53,6 +58,8 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(404).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

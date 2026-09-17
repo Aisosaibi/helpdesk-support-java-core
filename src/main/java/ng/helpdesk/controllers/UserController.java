@@ -7,9 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+// UserController handles lookup endpoints used by the dashboard, especially agent selection.
 @RestController
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/users")
+@RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
@@ -19,7 +22,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable String id) {
         try {
             UserResponse response = userService.getUserById(id);
@@ -27,5 +30,10 @@ public class UserController {
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(404).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/users/agents")
+    public ResponseEntity<List<UserResponse>> getAgents() {
+        return ResponseEntity.ok(userService.getAllAgents());
     }
 }
